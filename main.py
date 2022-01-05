@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-fint", "--fetch_interval", help="Fetch interval (in seconds)")
 parser.add_argument("-nint", "--next_interval", help="Fetch interval (in seconds)")
+parser.add_argument("-stop", "--selected_stop", help="Fetch interval (in seconds)")
 
 args = parser.parse_args()
 
@@ -27,6 +28,14 @@ SPI_PORT = 0
 SPI_DEVICE = 0
 SHOW_PAGE = 0
 SECONDS_COUNTER = 0
+ERROR = False
+
+# Mapping the names for the stop codes
+dict = {}
+dict['Starowislna'] = '358'
+dict['Bienczycka'] = '867'
+dict['Krowodrza Gorka'] = '63'
+dict['Czerwone Maki'] = '3038'
 
 # get args from parser, if not available, take the defaults
 try:
@@ -50,6 +59,19 @@ try:
 except ValueError:
     print("Interval is invalid or too short!")
     sys.exit()
+
+try:
+    if args.selected_stop:
+        if not dict[args.selected_stop]:
+            raise KeyError
+        SELECTED_STOP = args.selected_stop
+    else:
+        SELECTED_STOP = 'Bienczycka'
+except KeyError:
+    print("Selected stop name is invalid or not found in our database!")
+    sys.exit()
+
+URL = "http://www.ttss.krakow.pl/internetservice/services/passageInfo/stopPassages/stop?stop=" + dict[SELECTED_STOP]
 
 # 128x32 display with hardware SPI:
 disp = SSD1305.SSD1305_128_32(rst=RST, dc=DC, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=8000000))
@@ -79,29 +101,17 @@ x = 0
 # Some other nice fonts to try: http://www.dafont.com/bitmap.php
 font = ImageFont.truetype('04B_08__.TTF',8)
 
-# Mapping the names for the stop codes
-dict = {}
-dict['Starowislna'] = '358'
-dict['Bienczycka'] = '867'
-dict['Krowodrza Gorka'] = '63'
-dict['Czerwone Maki'] = '3038'
-
-selectedStop = 'Bienczycka'
-
-try:
-    URL = "http://www.ttss.krakow.pl/internetservice/services/passageInfo/stopPassages/stop?stop=" + dict[selectedStop]
-except KeyError:
-    print("There is no such stop as " + selectedStop + ".")
-    sys.exit()
-
 def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
 def requestData():
-    global STOP_NAME
-   
-    r = requests.get(url = URL)
+    global STOP_NAME, ERROR_MESSAGE
+    try:
+        r = requests.get(url = URL)
+    except requests.exceptions.RequestException as e:
+        displayError()
+    
     data = r.json()
 
     # let's split the data into chunks of 2, because of the display capabilities.
@@ -169,26 +179,45 @@ def printDeparture(departures):
     else:
         draw.text((x, top+8),str('Brak rozkladu :('), font=font, fill=255)
 
-def main():
-    global FETCH_DATA_INTERVAL, SECONDS_COUNTER, STOP_NAME, DEPARTURES
-
-    STOP_NAME, DEPARTURES = requestData()
-    print("Started Program")
-
-    while True: 
-        SECONDS_COUNTER+=1
+def displayError():
+    while True:
         now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
-        draw.rectangle((0,0,width,height), outline=0, fill=0)
-                    
-        # Write two lines of text.
-        draw.text((x, top),       convertDirection(STOP_NAME),  font=font, fill=1)
-        draw.text((x+90, top),    str(current_time),  font=font, fill=255)
+        draw.rectangle((0,0,width,height), outline=0, fill=0) 
+        draw.text((x+88, top), str(current_time),  font=font, fill=255)  
+        draw.text((x, top+16), "MPK API error", font=font, fill=255)
+        disp.image(image)
+        disp.display()
+        time.sleep(1)
 
-        if SECONDS_COUNTER % FETCH_DATA_INTERVAL == 0:
-            STOP_NAME, DEPARTURES = requestData()
+def main():
+    global FETCH_DATA_INTERVAL, SECONDS_COUNTER, STOP_NAME, DEPARTURES, ERROR_MESSAGE
 
-        printDeparture(DEPARTURES)
+    STOP_NAME, DEPARTURES = requestData()
+    while True: 
+        SECONDS_COUNTER+=1
+        
+        draw.rectangle((0,0,width,height), outline=0, fill=0)   
+
+        if SECONDS_COUNTER < 10:
+            loading = ""
+            for i in range(0, SECONDS_COUNTER):
+                loading+="."
+            draw.text((x, top), "MPK Stop Timetable" + loading,  font=font, fill=255)
+
+            draw.text((x+65, top+24), "#psiecinski",  font=font, fill=255)
+        
+        else:
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+        
+            draw.text((x, top), convertDirection(STOP_NAME),  font=font, fill=255)
+            draw.text((x+88, top),    str(current_time),  font=font, fill=255)
+
+            if SECONDS_COUNTER % FETCH_DATA_INTERVAL == 0:
+                STOP_NAME, DEPARTURES = requestData()
+            printDeparture(DEPARTURES)
+
 
         # Display image.
         disp.image(image)
