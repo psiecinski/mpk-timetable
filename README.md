@@ -1,9 +1,9 @@
 # MPK Tram Timetable
 ![project img](https://i.imgur.com/igkY1HG.jpeg)
 
-This project was created in order to present the nearest tram departures. It is similar to the ones on the tram stops. <br/>
-There is attached simple bash script in order to run it through the crontab at the raspberry pi start
-Video Presentation can be found [HERE](https://www.youtube.com/watch?v=YwPdIU6F4kk)
+This project was created in order to present the nearest tram departures. It is similar to the ones on the tram stops.
+There is attached simple bash script in order to run it through the crontab at the raspberry pi start <br/> <br/>
+**Video Presentation** can be found [HERE](https://www.youtube.com/watch?v=YwPdIU6F4kk)
 
 ## Used technologies:
 - Python 3.X
