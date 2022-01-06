@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-fint", "--fetch_interval", help="Fetch interval (in seconds)")
 parser.add_argument("-nint", "--next_interval", help="Fetch interval (in seconds)")
 parser.add_argument("-stop", "--selected_stop", help="Fetch interval (in seconds)")
+parser.add_argument("-vehicle", "--selected_vehicle", help="tram or bus")
 
 args = parser.parse_args()
 
@@ -36,6 +37,7 @@ dict['Starowislna'] = '358'
 dict['Bienczycka'] = '867'
 dict['Krowodrza Gorka'] = '63'
 dict['Czerwone Maki'] = '3038'
+dict['Rondo Czyzynskie'] = '408'
 
 # get args from parser, if not available, take the defaults
 try:
@@ -71,7 +73,23 @@ except KeyError:
     print("Selected stop name is invalid or not found in our database!")
     sys.exit()
 
-URL = "http://www.ttss.krakow.pl/internetservice/services/passageInfo/stopPassages/stop?stop=" + dict[SELECTED_STOP]
+try:
+    if args.selected_vehicle:
+        if args.selected_vehicle.lower()=="tram" or args.selected_vehicle.lower()=="bus" :
+            SELECTED_VEHICLE = args.selected_vehicle.lower()
+        else:
+            raise KeyError
+    else:
+        SELECTED_VEHICLE = 'tram'
+
+except KeyError:
+    print("Selected vehicle name is invalid! Select bus or tram")
+    sys.exit()
+
+if (SELECTED_VEHICLE == 'tram'):
+    URL = "http://www.ttss.krakow.pl/internetservice/services/passageInfo/stopPassages/stop?stop=" + dict[SELECTED_STOP]
+else:
+    URL = "http://91.223.13.70/internetservice/services/passageInfo/stopPassages/stop?stop=" + dict[SELECTED_STOP]
 
 # 128x32 display with hardware SPI:
 disp = SSD1305.SSD1305_128_32(rst=RST, dc=DC, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=8000000))
@@ -162,7 +180,7 @@ def printDeparture(departures):
             time = convertTime(time)
 
             draw.text((x, top+16),str(number), font=font, fill=255)
-            draw.text((x+15, top+16),str(direction), font=font, fill=255)
+            draw.text((x+18, top+16),str(direction), font=font, fill=255)
             draw.text((x+(103-len(str(time))), top+16),str(time), font=font, fill=255)
 
         if(len(departures[SHOW_PAGE]) > 0):
@@ -174,7 +192,7 @@ def printDeparture(departures):
             time = convertTime(time)
 
             draw.text((x, top+24),str(number), font=font, fill=255)
-            draw.text((x+15, top+24),str(direction), font=font, fill=255)
+            draw.text((x+18, top+24),str(direction), font=font, fill=255)
             draw.text((x+(103-len(str(time))), top+24),str(time), font=font, fill=255)
     else:
         draw.text((x, top+8),str('Brak rozkladu :('), font=font, fill=255)
@@ -194,9 +212,9 @@ def main():
     global FETCH_DATA_INTERVAL, SECONDS_COUNTER, STOP_NAME, DEPARTURES, ERROR_MESSAGE
 
     STOP_NAME, DEPARTURES = requestData()
+    
     while True: 
         SECONDS_COUNTER+=1
-        
         draw.rectangle((0,0,width,height), outline=0, fill=0)   
 
         if SECONDS_COUNTER < 10:
