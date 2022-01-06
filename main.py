@@ -162,9 +162,12 @@ def convertDirection(direction):
 
 
 def printDeparture(departures): 
-    global SHOW_PAGE, NEXT_PAGE_INTERVAL, SECONDS_COUNTER
-    
+    global SHOW_PAGE, NEXT_PAGE_INTERVAL, SECONDS_COUNTER, SELECTED_VEHICLE
     departures = list(departures)    
+    space = 0
+
+    if SELECTED_VEHICLE == "bus":
+        space = 5
     if len(departures) > 0:
         if SECONDS_COUNTER % NEXT_PAGE_INTERVAL == 0:
             SHOW_PAGE+=1
@@ -180,7 +183,7 @@ def printDeparture(departures):
             time = convertTime(time)
 
             draw.text((x, top+16),str(number), font=font, fill=255)
-            draw.text((x+18, top+16),str(direction), font=font, fill=255)
+            draw.text((x+15+space, top+16),str(direction), font=font, fill=255)
             draw.text((x+(103-len(str(time))), top+16),str(time), font=font, fill=255)
 
         if(len(departures[SHOW_PAGE]) > 0):
@@ -192,7 +195,7 @@ def printDeparture(departures):
             time = convertTime(time)
 
             draw.text((x, top+24),str(number), font=font, fill=255)
-            draw.text((x+18, top+24),str(direction), font=font, fill=255)
+            draw.text((x+15+space, top+24),str(direction), font=font, fill=255)
             draw.text((x+(103-len(str(time))), top+24),str(time), font=font, fill=255)
     else:
         draw.text((x, top+16),str('Brak rozkladu :('), font=font, fill=255)
