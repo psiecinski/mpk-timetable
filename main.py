@@ -16,9 +16,9 @@ from unidecode import unidecode
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-fint", "--fetch_interval", help="Fetch interval (in seconds)")
-parser.add_argument("-nint", "--next_interval", help="Fetch interval (in seconds)")
-parser.add_argument("-stop", "--selected_stop", help="Fetch interval (in seconds)")
-parser.add_argument("-vehicle", "--selected_vehicle", help="tram or bus")
+parser.add_argument("-nint", "--next_interval", help="How fast the pages should change? (in seconds)")
+parser.add_argument("-stop", "--selected_stop", help="Type stop name if preffered")
+parser.add_argument("-vehicle", "--selected_vehicle", help="Selected vehicle - tram or bus")
 
 args = parser.parse_args()
 
@@ -195,7 +195,7 @@ def printDeparture(departures):
             draw.text((x+18, top+24),str(direction), font=font, fill=255)
             draw.text((x+(103-len(str(time))), top+24),str(time), font=font, fill=255)
     else:
-        draw.text((x, top+8),str('Brak rozkladu :('), font=font, fill=255)
+        draw.text((x, top+16),str('Brak rozkladu :('), font=font, fill=255)
 
 def displayError():
     while True:
